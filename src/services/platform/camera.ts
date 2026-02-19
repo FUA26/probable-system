@@ -28,29 +28,44 @@ export async function capturePhoto(): Promise<string> {
         input.accept = 'image/*';
         input.capture = 'environment'; // rear camera
 
+        const cleanup = () => {
+          input.onchange = null;
+          input.oncancel = null;
+          if (input.parentNode) {
+            input.parentNode.removeChild(input);
+          }
+        };
+
         input.onchange = (e) => {
           const file = (e.target as HTMLInputElement).files?.[0];
           if (file) {
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
               toast.error('Ukuran foto maksimal 5MB');
+              cleanup();
               reject(new Error('File too large'));
               return;
             }
 
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
+            reader.onload = () => {
+              cleanup();
+              resolve(reader.result as string);
+            };
             reader.onerror = () => {
+              cleanup();
               toast.error('Gagal membaca foto');
               reject(new Error('Failed to read file'));
             };
             reader.readAsDataURL(file);
           } else {
+            cleanup();
             reject(new Error('Camera cancelled'));
           }
         };
 
         input.oncancel = () => {
+          cleanup();
           reject(new Error('Camera cancelled'));
         };
 
