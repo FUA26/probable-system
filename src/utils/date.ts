@@ -1,8 +1,61 @@
 /**
+ * Parse date string safely (handles various formats)
+ */
+const parseDateSafe = (date: Date | string): Date | null => {
+  if (!date) return null;
+
+  // If already a Date object, check if valid
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  // Handle string formats
+  const dateStr = String(date).trim();
+
+  if (!dateStr || dateStr === '' || dateStr === '-' || dateStr === 'null') {
+    return null;
+  }
+
+  // Try parsing with Date constructor first
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  // Try DD/MM/YYYY or DD-MM-YYYY format (common Indonesian format)
+  const parts = dateStr.split(/[\s/\-]/);
+  if (parts.length === 3) {
+    // Check if it's DD/MM/YYYY format
+    const [day, month, year] = parts.map(Number);
+    if (day > 0 && day <= 31 && month > 0 && month <= 12 && year > 1900) {
+      const dateFromParts = new Date(year, month - 1, day);
+      if (!isNaN(dateFromParts.getTime())) {
+        return dateFromParts;
+      }
+    }
+  }
+
+  // Try time-only format (HH:mm:ss)
+  const timeMatch = dateStr.match(/^(\d{1,2}):(\d{2}):?(\d{2})?$/);
+  if (timeMatch) {
+    const today = new Date();
+    today.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), timeMatch[3] ? parseInt(timeMatch[3]) : 0, 0);
+    return today;
+  }
+
+  return null;
+};
+
+/**
  * Format date to Indonesian locale
  */
 export const formatDate = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = parseDateSafe(date);
+
+  if (!dateObj) {
+    return '-';
+  }
+
   return dateObj.toLocaleDateString('id-ID', {
     weekday: 'long',
     year: 'numeric',
@@ -15,7 +68,12 @@ export const formatDate = (date: Date | string): string => {
  * Format time to HH:mm format
  */
 export const formatTime = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = parseDateSafe(date);
+
+  if (!dateObj) {
+    return '--:--';
+  }
+
   return dateObj.toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
@@ -26,7 +84,12 @@ export const formatTime = (date: Date | string): string => {
  * Format date and time
  */
 export const formatDateTime = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = parseDateSafe(date);
+
+  if (!dateObj) {
+    return '-';
+  }
+
   return `${formatDate(dateObj)} ${formatTime(dateObj)}`;
 };
 
@@ -68,7 +131,12 @@ export const diffInMinutes = (time1: string, time2: string): number => {
  * Check if a date is today
  */
 export const isToday = (date: Date | string): boolean => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = parseDateSafe(date);
+
+  if (!dateObj) {
+    return false;
+  }
+
   const today = new Date();
   return dateObj.toDateString() === today.toDateString();
 };
