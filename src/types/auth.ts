@@ -1,55 +1,64 @@
 // User profile
 export interface UserProfile {
-  nip: string;
-  nama: string;
-  email?: string;
-  jabatan?: string;
-  departemen?: string;
-  kantor?: string;
-  foto?: string;
+  idtbPegawai: number;
+  nipBaru: string;
+  idelektronik: string;
+  namaPegawai: string;
+  jabatan: string;
+  skpd: string;
+  opd: string;
+  shift: string;
+  idKantor: number;
+  device_id: string;
 }
 
 // Login request
 export interface LoginRequest {
   nip: string;
-  deviceId: string;
+  device_id: string;
 }
 
 // Login response
 export interface LoginResponse {
-  ok: boolean;
   token: string;
   user: UserProfile;
-  deviceRegistered?: boolean;
+  shift: string;
+  lokasiKantor: string;
 }
 
 // Token check response
 export interface TokenCheckResponse {
-  ok: boolean;
-  valid: boolean;
-  user?: UserProfile;
+  active: boolean;
+  exp: number;
+  expISO: string;
+  now: number;
+  remainingSeconds: number;
+  user: UserProfile;
 }
 
 // Shift information
 export interface ShiftInfo {
-  shift: string;
-  namaShift: string;
-  jamMasuk: string;
-  jamPulang: string;
+  id_shift: number;
+  today: string;
+  detail: {
+    jam_masuk: string;
+    jam_keluar: string;
+  };
 }
 
 // Shift schedule
 export interface ShiftSchedule {
+  id_shift: number;
   hari: string;
-  shift: ShiftInfo;
+  jam_masuk: string;
+  jam_keluar: string;
 }
 
 // Office location
 export interface OfficeLocation {
   id: number;
-  nama: string;
-  alamat: string;
-  latitude: number;
-  longitude: number;
+  nama_lokasi: string;
+  lat: string;
+  lng: string;
   radius: number;
 }
