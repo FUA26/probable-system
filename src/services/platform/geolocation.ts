@@ -1,6 +1,19 @@
-import { Capacitor } from '@capacitor/core';
-import { Geolocation as CapacitorGeolocation } from '@capacitor/geolocation';
 import toast from 'react-hot-toast';
+
+// Capacitor will be available only when packages are installed
+let Capacitor: any;
+try {
+  Capacitor = require('@capacitor/core').Capacitor;
+} catch (e) {
+  Capacitor = null;
+}
+
+let CapacitorGeolocation: any;
+try {
+  CapacitorGeolocation = require('@capacitor/geolocation').Geolocation;
+} catch (e) {
+  CapacitorGeolocation = null;
+}
 
 export interface LocationData {
   lat: string;
@@ -13,7 +26,7 @@ export interface LocationData {
  * Uses Capacitor plugin on native, browser API on web
  */
 export async function getCurrentLocation(): Promise<LocationData> {
-  const isCapacitor = Capacitor.isNativePlatform();
+  const isCapacitor = Capacitor && Capacitor.isNativePlatform();
 
   try {
     if (isCapacitor) {

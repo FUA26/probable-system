@@ -1,13 +1,31 @@
-import { Capacitor } from '@capacitor/core';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import toast from 'react-hot-toast';
+
+// Capacitor will be available only when packages are installed
+let Capacitor: any;
+try {
+  Capacitor = require('@capacitor/core').Capacitor;
+} catch (e) {
+  Capacitor = null;
+}
+
+let Camera: any;
+let CameraResultType: any;
+let CameraSource: any;
+try {
+  const cameraModule = require('@capacitor/camera');
+  Camera = cameraModule.Camera;
+  CameraResultType = cameraModule.CameraResultType;
+  CameraSource = cameraModule.CameraSource;
+} catch (e) {
+  Camera = null;
+}
 
 /**
  * Capture photo from camera
  * Uses Capacitor plugin on native, file input on web
  */
 export async function capturePhoto(): Promise<string> {
-  const isCapacitor = Capacitor.isNativePlatform();
+  const isCapacitor = Capacitor && Capacitor.isNativePlatform();
 
   try {
     if (isCapacitor) {

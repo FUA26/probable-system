@@ -1,9 +1,23 @@
-import { Capacitor } from '@capacitor/core';
-import { Device } from '@capacitor/device';
 import { secureStorage } from '../storage/storage';
 import { DEV_CONFIG } from '../../config/development';
 
 const DEVICE_ID_STORAGE_KEY = 'device_id';
+
+// Capacitor will be available only when packages are installed
+let Capacitor: any;
+try {
+  Capacitor = require('@capacitor/core').Capacitor;
+} catch (e) {
+  // Capacitor not installed, will use web-only mode
+  Capacitor = null;
+}
+
+let Device: any;
+try {
+  Device = require('@capacitor/device').Device;
+} catch (e) {
+  Device = null;
+}
 
 /**
  * Generate or retrieve device ID
@@ -27,7 +41,7 @@ export async function getDeviceId(): Promise<string> {
   // Generate new device ID
   let deviceId: string;
 
-  if (Capacitor.isNativePlatform()) {
+  if (Capacitor && Capacitor.isNativePlatform() && Device) {
     // Use Capacitor Device API on native
     const info = await Device.getId();
     deviceId = info.identifier;
@@ -46,7 +60,7 @@ export async function getDeviceId(): Promise<string> {
  * Get platform information
  */
 export async function getPlatform(): Promise<'web' | 'android' | 'ios'> {
-  if (!Capacitor.isNativePlatform()) {
+  if (!Capacitor || !Capacitor.isNativePlatform()) {
     return 'web';
   }
 
