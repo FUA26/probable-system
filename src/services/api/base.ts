@@ -1,9 +1,10 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios from 'axios';
+import type { AxiosError } from 'axios';
 import { secureStorage } from '../storage/storage';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-export const apiClient: AxiosInstance = axios.create({
+export const apiClient = axios.create({
   baseURL: `${API_URL}/api/v1`,
   timeout: 10000,
   headers: {
