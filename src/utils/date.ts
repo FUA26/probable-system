@@ -63,3 +63,12 @@ export const diffInMinutes = (time1: string, time2: string): number => {
   const minutes2 = parseTime(time2);
   return minutes2 - minutes1;
 };
+
+/**
+ * Check if a date is today
+ */
+export const isToday = (date: Date | string): boolean => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const today = new Date();
+  return dateObj.toDateString() === today.toDateString();
+};
