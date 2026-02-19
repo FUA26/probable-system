@@ -1,13 +1,13 @@
-// User profile
+// User profile from backend
 export interface UserProfile {
   idtbPegawai: number;
   nipBaru: string;
-  idelektronik: string;
+  idelektronik: number;
   namaPegawai: string;
   jabatan: string;
   skpd: string;
   opd: string;
-  shift: string;
+  shift: number;
   idKantor: number;
   device_id: string;
 }
@@ -22,8 +22,8 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string;
   user: UserProfile;
-  shift: string;
-  lokasiKantor: string;
+  shift: ShiftInfo;
+  lokasiKantor: OfficeLocation;
 }
 
 // Token check response
@@ -33,23 +33,22 @@ export interface TokenCheckResponse {
   expISO: string;
   now: number;
   remainingSeconds: number;
-  user: UserProfile;
-}
-
-// Shift information
-export interface ShiftInfo {
-  id_shift: number;
-  today: string;
-  detail: {
-    jam_masuk: string;
-    jam_keluar: string;
+  user: {
+    idtbPegawai: number;
+    skpd: string;
   };
 }
 
-// Shift schedule
+// Shift info
+export interface ShiftInfo {
+  id_shift: number;
+  today: ShiftSchedule;
+  detail: ShiftSchedule[];
+}
+
 export interface ShiftSchedule {
   id_shift: number;
-  hari: string;
+  hari: number;
   jam_masuk: string;
   jam_keluar: string;
 }
