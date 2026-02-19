@@ -1,5 +1,5 @@
 import apiClient from './base';
-import { LoginRequest, LoginResponse, TokenCheckResponse, UserProfile } from '../../types/auth';
+import type { LoginRequest, LoginResponse, TokenCheckResponse, UserProfile } from '../../types/auth';
 
 export const authAPI = {
   /**

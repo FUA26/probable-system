@@ -2,7 +2,7 @@ import React from 'react';
 
 interface TimeDisplayProps {
   label: string;
-  time: string | null;
+  time: string | null | undefined;
   highlight?: boolean;
 }
 

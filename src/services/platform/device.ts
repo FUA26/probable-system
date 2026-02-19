@@ -3,20 +3,29 @@ import { DEV_CONFIG } from '../../config/development';
 
 const DEVICE_ID_STORAGE_KEY = 'device_id';
 
-// Capacitor will be available only when packages are installed
-let Capacitor: any;
-try {
-  Capacitor = require('@capacitor/core').Capacitor;
-} catch (e) {
-  // Capacitor not installed, will use web-only mode
-  Capacitor = null;
-}
+// Capacitor types (optional, only available when packages are installed)
+// @ts-ignore - Capacitor is optional
+let Capacitor: any = null;
+// @ts-ignore - Device is optional
+let Device: any = null;
 
-let Device: any;
+// Dynamic import wrapper (will be null on web-only)
 try {
-  Device = require('@capacitor/device').Device;
+  // @ts-ignore
+  if (typeof require !== 'undefined') {
+    // @ts-ignore
+    const coreModule = require('@capacitor/core');
+    if (coreModule && coreModule.Capacitor) {
+      Capacitor = coreModule.Capacitor;
+    }
+    // @ts-ignore
+    const deviceModule = require('@capacitor/device');
+    if (deviceModule && deviceModule.Device) {
+      Device = deviceModule.Device;
+    }
+  }
 } catch (e) {
-  Device = null;
+  // Capacitor not installed, running in web-only mode
 }
 
 /**

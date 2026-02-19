@@ -4,7 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../contexts/AuthContext';
-import { FiUser, FiIdCard, FiMapPin, FiLogOut, FiSmartphone } from 'react-icons/fi';
+import { FiUser, FiCreditCard, FiMapPin, FiLogOut, FiSmartphone } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export const ProfilePage: React.FC = () => {
@@ -49,12 +49,12 @@ export const ProfilePage: React.FC = () => {
 
           <div className="space-y-3 pt-4 border-t">
             <InfoRow
-              icon={<FiIdCard />}
+              icon={<FiCreditCard />}
               label="NIP"
               value={user?.nipBaru || '-'}
             />
             <InfoRow
-              icon={<FiIdCard />}
+              icon={<FiCreditCard />}
               label="ID Elektronik"
               value={user?.idelektronik ? user.idelektronik.toString() : '-'}
             />
@@ -64,7 +64,7 @@ export const ProfilePage: React.FC = () => {
               value={user?.skpd || user?.opd || '-'}
             />
             <InfoRow
-              icon={<FiIdCard />}
+              icon={<FiCreditCard />}
               label="Shift"
               value={`Shift ${user?.shift || '-'}`}
             />

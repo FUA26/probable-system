@@ -3,8 +3,7 @@ import { useAuth } from './AuthContext';
 import { presensiAPI } from '../services/api/presensi';
 import { getCurrentLocation, calculateDistance } from '../services/platform/geolocation';
 import { capturePhoto } from '../services/platform/camera';
-import { TodayStatus, AttendanceRecord, OfficeLocation } from '../types/presensi';
-import { parseTime, diffInMinutes } from '../utils/date';
+import type { TodayStatus, OfficeLocation } from '../types/presensi';
 import { toast } from 'react-hot-toast';
 
 interface AppContextType {
@@ -15,7 +14,7 @@ interface AppContextType {
   isSubmitting: boolean;
   fetchTodayStatus: () => Promise<void>;
   submitAttendance: (type: 'masuk' | 'keluar', attendanceType: '' | 'WFH' | 'PDL', keterangan?: string) => Promise<void>;
-  getCurrentLocation: () => Promise<void>;
+  getCurrentLocation: () => Promise<{ lat: string; lng: string }>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,7 +30,7 @@ export const useApp = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
-  const [officeLocation, setOfficeLocation] = useState<OfficeLocation | null>(null);
+  const [officeLocation] = useState<OfficeLocation | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: string; lng: string } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,13 +54,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTodayStatus({
           hasCheckedIn: !!todayRecord.masuk,
           hasCheckedOut: !!todayRecord.keluar,
-          checkInTime: todayRecord.masuk,
-          checkOutTime: todayRecord.keluar,
+          checkInTime: todayRecord.masuk || null,
+          checkOutTime: todayRecord.keluar || null,
           status: todayRecord.status,
           isLate: todayRecord.is_late,
-          lateMinutes: todayRecord.terlambat,
+          lateMinutes: parseInt(todayRecord.terlambat, 10) || 0,
           isEarly: todayRecord.is_early,
-          earlyMinutes: todayRecord.pulang_awal,
+          earlyMinutes: parseInt(todayRecord.pulang_awal, 10) || 0,
         });
       } else {
         setTodayStatus({
@@ -101,7 +100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ) => {
     // Validation
     if (type === 'masuk' && todayStatus?.hasCheckedIn) {
-      toast.warning('Anda sudah melakukan presensi masuk hari ini');
+      toast('Anda sudah melakukan presensi masuk hari ini', { icon: '⚠️' });
       return;
     }
 
@@ -111,7 +110,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (type === 'keluar' && todayStatus?.hasCheckedOut) {
-      toast.warning('Anda sudah melakukan presensi keluar');
+      toast('Anda sudah melakukan presensi keluar', { icon: '⚠️' });
       return;
     }
 
@@ -126,14 +125,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const distance = calculateDistance(
           location.lat,
           location.lng,
-          officeLocation.lat,
-          officeLocation.lng
+          String(officeLocation.lat),
+          String(officeLocation.lng)
         );
 
         if (distance > officeLocation.radius) {
-          toast.warning(
+          toast(
             `Anda berada di luar radius kantor (${Math.round(distance)}m). ` +
-            `Radius yang diizinkan: ${officeLocation.radius}m`
+            `Radius yang diizinkan: ${officeLocation.radius}m`,
+            { icon: '⚠️' }
           );
           // Still allow submission, just warn
         }

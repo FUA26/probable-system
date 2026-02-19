@@ -5,8 +5,8 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Badge } from '../components/ui/Badge';
 import { presensiAPI } from '../services/api/presensi';
-import { AttendanceRecord } from '../types/presensi';
-import { formatDate, formatTime, parseTime, diffInMinutes } from '../utils/date';
+import type { AttendanceRecord } from '../types/presensi';
+import { formatDate, formatTime } from '../utils/date';
 import { FiCalendar, FiClock, FiMapPin } from 'react-icons/fi';
 
 export const HistoryPage: React.FC = () => {

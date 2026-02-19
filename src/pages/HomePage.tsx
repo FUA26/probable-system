@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
 import { ClockWidget } from '../components/common/ClockWidget';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { TimeDisplay } from '../components/common/TimeDisplay';
@@ -10,7 +9,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { getGreeting } from '../utils/date';
 import { FiCheckCircle, FiLogOut, FiMapPin } from 'react-icons/fi';
-import toast from 'react-hot-toast';
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();

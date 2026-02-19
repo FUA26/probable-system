@@ -6,7 +6,6 @@ import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { DEV_CONFIG } from '../config/development';
 import { validateNIP } from '../utils/validation';
-import toast from 'react-hot-toast';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();

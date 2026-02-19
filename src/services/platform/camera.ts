@@ -1,23 +1,34 @@
 import toast from 'react-hot-toast';
 
-// Capacitor will be available only when packages are installed
-let Capacitor: any;
-try {
-  Capacitor = require('@capacitor/core').Capacitor;
-} catch (e) {
-  Capacitor = null;
-}
+// Capacitor types (optional, only available when packages are installed)
+// @ts-ignore - Capacitor is optional
+let Capacitor: any = null;
+// @ts-ignore - Camera is optional
+let Camera: any = null;
+// @ts-ignore - CameraResultType is optional
+let CameraResultType: any = null;
+// @ts-ignore - CameraSource is optional
+let CameraSource: any = null;
 
-let Camera: any;
-let CameraResultType: any;
-let CameraSource: any;
+// Dynamic import wrapper (will be null on web-only)
 try {
-  const cameraModule = require('@capacitor/camera');
-  Camera = cameraModule.Camera;
-  CameraResultType = cameraModule.CameraResultType;
-  CameraSource = cameraModule.CameraSource;
+  // @ts-ignore
+  if (typeof require !== 'undefined') {
+    // @ts-ignore
+    const coreModule = require('@capacitor/core');
+    if (coreModule && coreModule.Capacitor) {
+      Capacitor = coreModule.Capacitor;
+    }
+    // @ts-ignore
+    const cameraModule = require('@capacitor/camera');
+    if (cameraModule) {
+      Camera = cameraModule.Camera;
+      CameraResultType = cameraModule.CameraResultType;
+      CameraSource = cameraModule.CameraSource;
+    }
+  }
 } catch (e) {
-  Camera = null;
+  // Capacitor not installed, running in web-only mode
 }
 
 /**

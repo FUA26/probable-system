@@ -57,11 +57,19 @@ export interface AttendanceHistoryResponse {
 export interface TodayStatus {
   hasCheckedIn: boolean;
   hasCheckedOut: boolean;
-  checkInTime: string;
-  checkOutTime: string;
-  status: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  status: 'WFO' | 'WFH' | 'PDL' | string;
   isLate: boolean;
   lateMinutes: number;
   isEarly: boolean;
   earlyMinutes: number;
+}
+
+// Office location
+export interface OfficeLocation {
+  lat: number;
+  lng: number;
+  radius: number;
+  name: string;
 }

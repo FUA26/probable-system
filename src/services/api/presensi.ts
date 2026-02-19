@@ -1,5 +1,5 @@
 import apiClient from './base';
-import { AttendanceSubmitData, AttendanceSubmitResponse, AttendanceHistoryResponse } from '../../types/presensi';
+import type { AttendanceSubmitResponse, AttendanceHistoryResponse } from '../../types/presensi';
 
 export const presensiAPI = {
   /**

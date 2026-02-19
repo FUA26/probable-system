@@ -2,25 +2,17 @@ import React from 'react';
 import { Badge } from '../ui/Badge';
 
 interface StatusBadgeProps {
-  status: 'WFO' | 'WFH' | 'PDL';
+  status: 'WFO' | 'WFH' | 'PDL' | string;
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const variants = {
-    WFO: 'info' as const,
-    WFH: 'warning' as const,
-    PDL: 'success' as const,
+  const variants: Record<string, 'info' | 'warning' | 'success'> = {
+    WFO: 'info',
+    WFH: 'warning',
+    PDL: 'success',
   };
 
-  const labels = {
-    WFO: 'WFO',
-    WFH: 'WFH',
-    PDL: 'PDL',
-  };
+  const variant = variants[status] || 'info';
 
-  return (
-    <Badge variant={variants[status]}>
-      {labels[status]}
-    </Badge>
-  );
+  return <Badge variant={variant}>{status}</Badge>;
 };

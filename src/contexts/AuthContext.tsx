@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { authAPI } from '../services/api/auth';
 import { secureStorage } from '../services/storage/storage';
 import { getDeviceId, getPlatform } from '../services/platform/device';
-import { UserProfile } from '../types/auth';
+import type { UserProfile } from '../types/auth';
 import { toast } from 'react-hot-toast';
 
 interface AuthContextType {

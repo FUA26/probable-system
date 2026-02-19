@@ -1,18 +1,28 @@
 import toast from 'react-hot-toast';
 
-// Capacitor will be available only when packages are installed
-let Capacitor: any;
-try {
-  Capacitor = require('@capacitor/core').Capacitor;
-} catch (e) {
-  Capacitor = null;
-}
+// Capacitor types (optional, only available when packages are installed)
+// @ts-ignore - Capacitor is optional
+let Capacitor: any = null;
+// @ts-ignore - Geolocation is optional
+let CapacitorGeolocation: any = null;
 
-let CapacitorGeolocation: any;
+// Dynamic import wrapper (will be null on web-only)
 try {
-  CapacitorGeolocation = require('@capacitor/geolocation').Geolocation;
+  // @ts-ignore
+  if (typeof require !== 'undefined') {
+    // @ts-ignore
+    const coreModule = require('@capacitor/core');
+    if (coreModule && coreModule.Capacitor) {
+      Capacitor = coreModule.Capacitor;
+    }
+    // @ts-ignore
+    const geoModule = require('@capacitor/geolocation');
+    if (geoModule && geoModule.Geolocation) {
+      CapacitorGeolocation = geoModule.Geolocation;
+    }
+  }
 } catch (e) {
-  CapacitorGeolocation = null;
+  // Capacitor not installed, running in web-only mode
 }
 
 export interface LocationData {
