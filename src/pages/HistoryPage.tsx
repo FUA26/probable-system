@@ -6,7 +6,7 @@ import { StatusBadge } from '../components/common/StatusBadge';
 import { Badge } from '../components/ui/Badge';
 import { presensiAPI } from '../services/api/presensi';
 import type { AttendanceRecord } from '../types/presensi';
-import { formatDate, formatTime } from '../utils/date';
+import { formatDate } from '../utils/date';
 import { FiCalendar, FiClock, FiMapPin } from 'react-icons/fi';
 
 export const HistoryPage: React.FC = () => {
@@ -52,6 +52,31 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <MainLayout title="Riwayat Presensi">
+      {/* Summary at bottom */}
+      <div className="p-4">
+        <Card className="bg-primary-50">
+          <h3 className="font-semibold text-gray-900 mb-2">Ringkasan</h3>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-primary-600">{records.length}</p>
+              <p className="text-xs text-gray-600">Total Hari</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-orange-600">
+                {records.filter(r => r.is_late).length}
+              </p>
+              <p className="text-xs text-gray-600">Terlambat</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-600">
+                {records.filter(r => r.is_early).length}
+              </p>
+              <p className="text-xs text-gray-600">Pulang Awal</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <div className="p-4 space-y-3">
         {records.map((record) => (
           <Card key={record.tgl} className="hover:shadow-md transition-shadow">
@@ -72,7 +97,7 @@ export const HistoryPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500">Masuk</p>
                     <p className="text-sm font-medium">
-                      {record.masuk ? formatTime(record.masuk) : '--:--'}
+                      {record.masuk ? record.masuk : '--:--'}
                     </p>
                   </div>
                 </div>
@@ -82,7 +107,7 @@ export const HistoryPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500">Keluar</p>
                     <p className="text-sm font-medium">
-                      {record.keluar ? formatTime(record.keluar) : '--:--'}
+                      {record.keluar ? record.keluar : '--:--'}
                     </p>
                   </div>
                 </div>
@@ -127,30 +152,7 @@ export const HistoryPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Summary at bottom */}
-      <div className="p-4">
-        <Card className="bg-primary-50">
-          <h3 className="font-semibold text-gray-900 mb-2">Ringkasan</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-primary-600">{records.length}</p>
-              <p className="text-xs text-gray-600">Total Hari</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-orange-600">
-                {records.filter(r => r.is_late).length}
-              </p>
-              <p className="text-xs text-gray-600">Terlambat</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-600">
-                {records.filter(r => r.is_early).length}
-              </p>
-              <p className="text-xs text-gray-600">Pulang Awal</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+
     </MainLayout>
   );
 };
