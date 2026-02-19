@@ -1,0 +1,212 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { presensiAPI } from '../services/api/presensi';
+import { getCurrentLocation, calculateDistance } from '../services/platform/geolocation';
+import { capturePhoto } from '../services/platform/camera';
+import { TodayStatus, AttendanceRecord, OfficeLocation } from '../types/presensi';
+import { parseTime, diffInMinutes } from '../utils/date';
+import { toast } from 'react-hot-toast';
+
+interface AppContextType {
+  todayStatus: TodayStatus | null;
+  officeLocation: OfficeLocation | null;
+  currentLocation: { lat: string; lng: string } | null;
+  isLoadingLocation: boolean;
+  isSubmitting: boolean;
+  fetchTodayStatus: () => Promise<void>;
+  submitAttendance: (type: 'masuk' | 'keluar', attendanceType: '' | 'WFH' | 'PDL', keterangan?: string) => Promise<void>;
+  getCurrentLocation: () => Promise<void>;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+  return context;
+};
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
+  const [officeLocation, setOfficeLocation] = useState<OfficeLocation | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: string; lng: string } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch today's status on mount
+  useEffect(() => {
+    if (user) {
+      // Get office location from user data
+      // This would come from the login response
+      // For now, we'll set it from shift data
+    }
+  }, [user]);
+
+  const fetchTodayStatus = useCallback(async () => {
+    try {
+      const response = await presensiAPI.getHistory();
+      const today = new Date().toISOString().split('T')[0];
+      const todayRecord = response.data.find((record) => record.tgl === today);
+
+      if (todayRecord) {
+        setTodayStatus({
+          hasCheckedIn: !!todayRecord.masuk,
+          hasCheckedOut: !!todayRecord.keluar,
+          checkInTime: todayRecord.masuk,
+          checkOutTime: todayRecord.keluar,
+          status: todayRecord.status,
+          isLate: todayRecord.is_late,
+          lateMinutes: todayRecord.terlambat,
+          isEarly: todayRecord.is_early,
+          earlyMinutes: todayRecord.pulang_awal,
+        });
+      } else {
+        setTodayStatus({
+          hasCheckedIn: false,
+          hasCheckedOut: false,
+          checkInTime: null,
+          checkOutTime: null,
+          status: 'WFO',
+          isLate: false,
+          lateMinutes: 0,
+          isEarly: false,
+          earlyMinutes: 0,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch today status:', error);
+    }
+  }, []);
+
+  const getCurrentLocationHandler = useCallback(async () => {
+    setIsLoadingLocation(true);
+    try {
+      const location = await getCurrentLocation();
+      setCurrentLocation({ lat: location.lat, lng: location.lng });
+      return location;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  }, []);
+
+  const submitAttendance = useCallback(async (
+    type: 'masuk' | 'keluar',
+    attendanceType: '' | 'WFH' | 'PDL',
+    keterangan?: string
+  ) => {
+    // Validation
+    if (type === 'masuk' && todayStatus?.hasCheckedIn) {
+      toast.warning('Anda sudah melakukan presensi masuk hari ini');
+      return;
+    }
+
+    if (type === 'keluar' && !todayStatus?.hasCheckedIn) {
+      toast.error('Anda belum melakukan presensi masuk');
+      return;
+    }
+
+    if (type === 'keluar' && todayStatus?.hasCheckedOut) {
+      toast.warning('Anda sudah melakukan presensi keluar');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Get location
+      const location = await getCurrentLocationHandler();
+
+      // Check if within office radius (for WFO)
+      if (attendanceType === '' && officeLocation) {
+        const distance = calculateDistance(
+          location.lat,
+          location.lng,
+          officeLocation.lat,
+          officeLocation.lng
+        );
+
+        if (distance > officeLocation.radius) {
+          toast.warning(
+            `Anda berada di luar radius kantor (${Math.round(distance)}m). ` +
+            `Radius yang diizinkan: ${officeLocation.radius}m`
+          );
+          // Still allow submission, just warn
+        }
+      }
+
+      // Capture photo (optional, can be skipped)
+      let photoDataUrl: string | undefined;
+      try {
+        photoDataUrl = await capturePhoto();
+      } catch (error: any) {
+        if (error.message === 'Camera cancelled' || error.message === 'User cancelled photos app') {
+          // User cancelled, proceed without photo
+          photoDataUrl = undefined;
+        } else {
+          throw error;
+        }
+      }
+
+      // Prepare form data
+      const formData = new FormData();
+      formData.append('lat', location.lat);
+      formData.append('long', location.lng);
+      formData.append('jenis', attendanceType);
+      formData.append('status', type === 'masuk' ? '1' : '0');
+
+      if (attendanceType === 'PDL' && keterangan) {
+        formData.append('keterangan', keterangan);
+      }
+
+      if (photoDataUrl) {
+        // Convert data URL to blob
+        const response = await fetch(photoDataUrl);
+        const blob = await response.blob();
+        formData.append('foto', blob, 'photo.jpg');
+      }
+
+      // Submit
+      const result = await presensiAPI.submit(formData);
+
+      toast.success(
+        `Presensi ${result.aksi} berhasil! ` +
+        (result.terlambat ? `(Terlambat ${result.terlambat} menit)` : '')
+      );
+
+      // Refresh today status
+      await fetchTodayStatus();
+    } catch (error: any) {
+      const errorCode = error.response?.data?.error;
+
+      if (errorCode === 'lat_long_required') {
+        toast.error('Lokasi tidak ditemukan. Coba lagi');
+      } else if (errorCode === 'keterangan_required_for_PDL') {
+        toast.error('Keterangan harus diisi untuk PDL');
+      } else {
+        toast.error('Gagal mengirim presensi. Silakan coba lagi');
+      }
+
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [todayStatus, officeLocation, getCurrentLocationHandler, fetchTodayStatus]);
+
+  const value: AppContextType = {
+    todayStatus,
+    officeLocation,
+    currentLocation,
+    isLoadingLocation,
+    isSubmitting,
+    fetchTodayStatus,
+    submitAttendance,
+    getCurrentLocation: getCurrentLocationHandler,
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+};
