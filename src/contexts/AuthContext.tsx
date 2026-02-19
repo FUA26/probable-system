@@ -14,7 +14,7 @@ interface AuthContextType {
   platform: 'web' | 'android' | 'ios';
   login: (nip: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,50 +36,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize: check if user is already authenticated
   useEffect(() => {
+    let mounted = true;
+
     const initAuth = async () => {
       try {
         // Get device ID
         const id = await getDeviceId();
-        setDeviceId(id);
+        if (mounted) {
+          setDeviceId(id);
+        }
 
         // Get platform
         const plat = await getPlatform();
-        setPlatform(plat);
+        if (mounted) {
+          setPlatform(plat);
+        }
 
         // Check for existing token
         const storedToken = await secureStorage.getItem('auth_token');
-        if (storedToken) {
+        if (storedToken && mounted) {
           setToken(storedToken);
 
           // Validate token with backend
           try {
             const checkResult = await authAPI.checkToken();
-            if (checkResult.active) {
-              // Token is valid, fetch user profile
-              const profileData = await authAPI.getProfile();
-              setUser(profileData.profile);
-            } else {
-              // Token expired
-              await secureStorage.removeItem('auth_token');
-              setToken(null);
+            if (mounted) {
+              if (checkResult.active) {
+                // Token is valid, fetch user profile
+                const profileData = await authAPI.getProfile();
+                setUser(profileData.profile);
+              } else {
+                // Token expired
+                await secureStorage.removeItem('auth_token');
+                setToken(null);
+              }
             }
           } catch (error) {
             // Token validation failed
-            await secureStorage.removeItem('auth_token');
-            setToken(null);
+            if (mounted) {
+              await secureStorage.removeItem('auth_token');
+              setToken(null);
+            }
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = useCallback(async (nip: string) => {
+    // Check if deviceId is ready
+    if (!deviceId) {
+      toast.error('Sistem sedang mempersiapkan perangkat. Silakan coba lagi');
+      throw new Error('Device ID not initialized');
+    }
+
     try {
       const response = await authAPI.login({ nip, device_id: deviceId });
 
