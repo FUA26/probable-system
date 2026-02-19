@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/*.png', 'splash.png'],
+      includeAssets: ['icons/*.png'],
       manifest: {
         name: 'Prescap - Presensi Pegawai',
         short_name: 'Prescap',
