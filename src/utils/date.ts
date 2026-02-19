@@ -16,7 +16,7 @@ const parseDateSafe = (date: Date | string): Date | null => {
     return null;
   }
 
-  // Try parsing with Date constructor first
+  // Try parsing with Date constructor first (handles YYYY-MM-DD, ISO dates, etc.)
   const parsed = new Date(dateStr);
   if (!isNaN(parsed.getTime())) {
     return parsed;
@@ -35,11 +35,16 @@ const parseDateSafe = (date: Date | string): Date | null => {
     }
   }
 
-  // Try time-only format (HH:mm:ss)
-  const timeMatch = dateStr.match(/^(\d{1,2}):(\d{2}):?(\d{2})?$/);
+  // Try time-only format (HH:mm or HH:mm:ss) - use today's date with that time
+  const timeMatch = dateStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (timeMatch) {
     const today = new Date();
-    today.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), timeMatch[3] ? parseInt(timeMatch[3]) : 0, 0);
+    today.setHours(
+      parseInt(timeMatch[1], 10),
+      parseInt(timeMatch[2], 10),
+      timeMatch[3] ? parseInt(timeMatch[3], 10) : 0,
+      0
+    );
     return today;
   }
 

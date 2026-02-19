@@ -57,10 +57,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           checkInTime: todayRecord.masuk || null,
           checkOutTime: todayRecord.keluar || null,
           status: todayRecord.status,
-          isLate: todayRecord.is_late,
-          lateMinutes: parseInt(todayRecord.terlambat, 10) || 0,
-          isEarly: todayRecord.is_early,
-          earlyMinutes: parseInt(todayRecord.pulang_awal, 10) || 0,
+          isLate: !!todayRecord.is_late,
+          lateMinutes: todayRecord.terlambat || 0,
+          isEarly: !!todayRecord.is_early,
+          earlyMinutes: todayRecord.pulang_awal || 0,
         });
       } else {
         setTodayStatus({

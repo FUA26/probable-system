@@ -26,23 +26,23 @@ export interface AttendanceSubmitResponse {
 // Attendance record
 export interface AttendanceRecord {
   tgl: string;
-  masuk: string;
-  keluar: string;
+  masuk: string | null;
+  keluar: string | null;
   status: string;
-  terlambat: string;
-  pulang_awal: string;
-  is_late: boolean;
-  is_early: boolean;
+  terlambat: number;
+  pulang_awal: number;
+  is_late: boolean | null;
+  is_early: boolean | null;
   jadwal_masuk: string;
   jadwal_keluar: string;
-  foto: string;
-  foto2: string;
+  foto: string | null;
+  foto2: string | null;
   lokasi: string;
-  lokasi_keluar: string;
+  lokasi_keluar: string | null;
   verifikasi: string;
-  skpd: string;
+  skpd: number;
   id_shift: number;
-  keterangan: string;
+  keterangan: string | null;
 }
 
 // Attendance history response
