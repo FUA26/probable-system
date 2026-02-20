@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card } from '../components/ui/Card';
@@ -9,27 +9,87 @@ import { TimeDisplay } from '../components/common/TimeDisplay';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { getGreeting } from '../utils/date';
-import { FiCheckCircle, FiLogOut, FiMapPin } from 'react-icons/fi';
+import { FiCheckCircle, FiLogOut, FiMapPin, FiActivity, FiClock } from 'react-icons/fi';
+import { presensiAPI } from '../services/api/presensi';
+
+interface ActivityItem {
+  type: 'Masuk' | 'Keluar';
+  time: string;
+  date: string;
+  status: string;
+  isLate?: boolean;
+  lateMinutes?: number;
+  isEarly?: boolean;
+  earlyMinutes?: number;
+}
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { todayStatus, submitAttendance, isSubmitting, fetchTodayStatus } = useApp();
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
+
+  const fetchRecentActivities = async () => {
+    try {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const history = await presensiAPI.getHistory();
+      const activities: ActivityItem[] = [];
+
+      // Process history to separate check-in and check-out events
+      // Filter only for today
+      const todaysRecords = history.data.filter(record => record.tgl === today);
+
+      todaysRecords.forEach(record => {
+        if (record.masuk) {
+          activities.push({
+            type: 'Masuk',
+            time: record.masuk,
+            date: record.tgl,
+            status: record.status,
+            isLate: !!record.is_late,
+            lateMinutes: record.terlambat
+          });
+        }
+        if (record.keluar) {
+          activities.push({
+            type: 'Keluar',
+            time: record.keluar,
+            date: record.tgl,
+            status: record.status,
+            isEarly: !!record.is_early,
+            earlyMinutes: record.pulang_awal
+          });
+        }
+      });
+
+      // Sort by date and time descending
+      activities.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      // Take top 2
+      setRecentActivities(activities.slice(0, 2));
+    } catch (error) {
+      console.error('Failed to fetch history', error);
+    }
+  };
 
   useEffect(() => {
     // Fetch on initial mount
     console.log('[HomePage] Fetching todayStatus on mount...');
-    fetchTodayStatus().then(() => {
-      console.log('[HomePage] todayStatus fetched on mount.');
-    });
+    fetchTodayStatus();
+    fetchRecentActivities();
 
     // Refetch when tab/window becomes visible (handles browser refresh & tab switching)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         console.log('[HomePage] Page became visible, refetching todayStatus...');
-        fetchTodayStatus().then(() => {
-          console.log('[HomePage] todayStatus refetched after visibility change.');
-        });
+        fetchTodayStatus();
+        fetchRecentActivities();
       }
     };
 
@@ -38,9 +98,8 @@ export const HomePage: React.FC = () => {
     // Also refetch on window focus (e.g., switching back from another app)
     const handleFocus = () => {
       console.log('[HomePage] Window focused, refetching todayStatus...');
-      fetchTodayStatus().then(() => {
-        console.log('[HomePage] todayStatus refetched after window focus.');
-      });
+      fetchTodayStatus();
+      fetchRecentActivities();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -71,7 +130,7 @@ export const HomePage: React.FC = () => {
       try {
         // For checkout, we can pass empty string or existing status. 
         // Passing '' assumes backend knows match or doesn't care for checkout.
-        await submitAttendance('keluar', (todayStatus.status as 'WFH'|'PDL'|'') || '');
+        await submitAttendance('keluar', (todayStatus.status as 'WFH' | 'PDL' | '') || '');
       } catch (error) {
         // Error already handled in context
       }
@@ -171,6 +230,62 @@ export const HomePage: React.FC = () => {
               <span>Keluar</span>
             </div>
           </Button>
+        </div>
+
+        {/* Recent Activities */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <FiActivity className="text-primary-600" />
+            Aktifitas Terakhir
+          </h3>
+
+          <div className="space-y-3">
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <Card key={index} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${activity.type === 'Masuk'
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-orange-100 text-orange-600'
+                        }`}>
+                        {activity.type === 'Masuk' ? <FiCheckCircle /> : <FiLogOut />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          Presensi {activity.type}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <FiClock size={12} />
+                          <span>{activity.date}, {activity.time.substring(0, 5)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      {activity.type === 'Masuk' && activity.isLate ? (
+                        <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded">
+                          Telat {activity.lateMinutes}m
+                        </span>
+                      ) : activity.type === 'Keluar' && activity.isEarly ? (
+                        <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                          -{activity.earlyMinutes}m
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">
+                          Tepat Waktu
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="p-4 text-center text-gray-500 text-sm">
+                Belum ada aktifitas presensi
+              </Card>
+            )}
+          </div>
         </div>
 
         {/* Instructions */}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { App } from "@capacitor/app";
 import { Geolocation } from "@capacitor/geolocation";
 import { Camera } from "@capacitor/camera";
 import { Button } from "../ui/Button";
@@ -23,13 +24,6 @@ export const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
   const checkPermissions = async () => {
     try {
       if (!Capacitor.isNativePlatform()) {
-        // Assume granted on web for now or handle differently if needed
-        // For simple PWA testing, we might want to request properly too,
-        // but 'permissions' API on web is limited.
-        // Let's assume passed for web to avoid blocking dev if not strictly required there yet,
-        // or implement web-specific checks if the user insisted on "aplikasi" (usually mobile).
-        // Given the context of "install" and "absen", it's likely mobile.
-        // However, let's try to check web permissions if possible or mock them.
         setLocationStatus("granted");
         setCameraStatus("granted");
         setIsLoading(false);
@@ -43,7 +37,6 @@ export const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
       setCameraStatus(camera.camera as PermissionStatus);
     } catch (error) {
       console.error("Error checking permissions:", error);
-      // Fallback to prompt/unknown to try again
     } finally {
       setIsLoading(false);
     }
@@ -51,21 +44,44 @@ export const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
 
   useEffect(() => {
     checkPermissions();
+
+    const setupListener = async () => {
+      await App.addListener('appStateChange', (state: { isActive: boolean }) => {
+        if (state.isActive) {
+          checkPermissions();
+        }
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      App.removeAllListeners();
+    };
   }, []);
 
   const requestPermissions = async () => {
     try {
+      // Request location permission first
       if (locationStatus !== "granted") {
-        const locationRequest = await Geolocation.requestPermissions();
-        setLocationStatus(locationRequest.location as PermissionStatus);
+        await Geolocation.requestPermissions();
+        // Check result immediately after request
+        const locationResult = await Geolocation.checkPermissions();
+        setLocationStatus(locationResult.location as PermissionStatus);
       }
 
+      // Only request camera permission after location is handled
+      // This prevents Android from blocking multiple rapid permission dialogs
       if (cameraStatus !== "granted") {
-        const cameraRequest = await Camera.requestPermissions();
-        setCameraStatus(cameraRequest.camera as PermissionStatus);
+        await Camera.requestPermissions();
+        // Check result immediately after request
+        const cameraResult = await Camera.checkPermissions();
+        setCameraStatus(cameraResult.camera as PermissionStatus);
       }
     } catch (error) {
       console.error("Error requesting permissions:", error);
+      // Still re-check in case partial success or external change
+      await checkPermissions();
     }
   };
 

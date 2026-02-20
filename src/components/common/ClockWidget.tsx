@@ -15,12 +15,13 @@ export const ClockWidget: React.FC = () => {
 
   return (
     <div className="text-center py-6">
-      <div className="text-4xl font-bold text-primary-600">
-        {format(currentTime, 'HH:mm:ss')}
-      </div>
       <div className="text-sm text-gray-600 mt-1">
         {format(currentTime, 'EEEE, dd MMMM yyyy', { locale: id })}
       </div>
+      <div className="text-6xl font-bold text-primary-600">
+        {format(currentTime, 'HH:mm:ss')}
+      </div>
+
     </div>
   );
 };

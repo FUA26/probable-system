@@ -7,16 +7,16 @@ import { MapComponent } from '../components/map/MapComponent';
 import { useApp } from '../contexts/AppContext';
 import { calculateDistance } from '../services/platform/geolocation';
 import { FiMapPin, FiHome, FiBriefcase, FiAlertCircle } from 'react-icons/fi';
-// import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 export const AttendancePage: React.FC = () => {
   const navigate = useNavigate();
-  const { 
-    officeLocation, 
-    currentLocation, 
-    getCurrentLocation, 
-    submitAttendance, 
-    isSubmitting 
+  const {
+    officeLocation,
+    currentLocation,
+    getCurrentLocation,
+    submitAttendance,
+    isSubmitting
   } = useApp();
 
   const [attendanceType, setAttendanceType] = useState<'' | 'WFH' | 'PDL'>('');
@@ -43,7 +43,7 @@ export const AttendancePage: React.FC = () => {
         String(officeLocation.lng)
       );
       setDistance(dist);
-      
+
       // Radius check for WFO (attendanceType === '')
       // Check if distance is <= radius
       setIsLocationValid(dist <= officeLocation.radius);
@@ -52,12 +52,10 @@ export const AttendancePage: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      /*
       if (attendanceType === '' && !isLocationValid) {
         toast.error(`Posisi Anda diluar radius kantor (${Math.round(distance || 0)}m).`);
         return;
       }
-      */
 
       await submitAttendance('masuk', attendanceType, keterangan);
       navigate('/');
@@ -83,45 +81,44 @@ export const AttendancePage: React.FC = () => {
 
         {/* Map Section */}
         <Card className="overflow-hidden p-0 border border-gray-200 shadow-sm">
-          <MapComponent 
+          <MapComponent
             currentLocation={currentLocation ? { lat: Number(currentLocation.lat), lng: Number(currentLocation.lng) } : null}
             officeLocation={officeLocation}
           />
           <div className="p-3 bg-white border-t border-gray-100">
-             {officeLocation ? (
-               <div className="flex items-center justify-between text-sm">
-                 <div className="flex items-center gap-2">
-                   <FiMapPin className="text-primary-600" />
-                   <span className="text-gray-600">Jarak ke kantor:</span>
-                 </div>
-                 <span className={`font-semibold ${getRadiusStatusColor()}`}>
-                   {distance ? `${Math.round(distance)} meter` : 'Menghitung...'}
-                 </span>
-               </div>
-             ) : (
-               <p className="text-sm text-yellow-600 flex items-center gap-2">
-                 <FiAlertCircle />
-                 Lokasi kantor belum diset
-               </p>
-             )}
-             {locationError && (
-               <p className="text-xs text-red-500 mt-1">{locationError}</p>
-             )}
+            {officeLocation ? (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <FiMapPin className="text-primary-600" />
+                  <span className="text-gray-600">Jarak ke kantor:</span>
+                </div>
+                <span className={`font-semibold ${getRadiusStatusColor()}`}>
+                  {distance ? `${Math.round(distance)} meter` : 'Menghitung...'}
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-yellow-600 flex items-center gap-2">
+                <FiAlertCircle />
+                Lokasi kantor belum diset
+              </p>
+            )}
+            {locationError && (
+              <p className="text-xs text-red-500 mt-1">{locationError}</p>
+            )}
           </div>
         </Card>
 
         {/* Attendance Type Selector */}
         <div className="space-y-3">
           <h3 className="font-semibold text-gray-900">Pilih Lokasi Kerja</h3>
-          
+
           {/* WFO Option */}
           <button
             onClick={() => setAttendanceType('')}
-            className={`w-full p-4 rounded-xl border-2 text-left transition-all relative overflow-hidden ${
-              attendanceType === ''
+            className={`w-full p-4 rounded-xl border-2 text-left transition-all relative overflow-hidden ${attendanceType === ''
                 ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600'
                 : 'border-gray-200 bg-white hover:border-primary-200'
-            }`}
+              }`}
           >
             <div className="flex items-start gap-3">
               <div className={`p-2 rounded-lg ${attendanceType === '' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
@@ -139,7 +136,7 @@ export const AttendancePage: React.FC = () => {
                   )}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">Bekerja dari kantor pusat</p>
-                
+
                 {attendanceType === '' && (
                   <div className="mt-3 pt-3 border-t border-primary-100 text-sm">
                     {isLocationValid ? (
@@ -160,13 +157,12 @@ export const AttendancePage: React.FC = () => {
           {/* WFH Option */}
           <button
             onClick={() => setAttendanceType('WFH')}
-            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-              attendanceType === 'WFH'
+            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${attendanceType === 'WFH'
                 ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600'
                 : 'border-gray-200 bg-white hover:border-primary-200'
-            }`}
+              }`}
           >
-             <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3">
               <div className={`p-2 rounded-lg ${attendanceType === 'WFH' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
                 <FiHome size={20} />
               </div>
@@ -182,13 +178,12 @@ export const AttendancePage: React.FC = () => {
           {/* PDL Option */}
           <button
             onClick={() => setAttendanceType('PDL')}
-            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-              attendanceType === 'PDL'
+            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${attendanceType === 'PDL'
                 ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600'
                 : 'border-gray-200 bg-white hover:border-primary-200'
-            }`}
+              }`}
           >
-             <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3">
               <div className={`p-2 rounded-lg ${attendanceType === 'PDL' ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
                 <FiMapPin size={20} />
               </div>
@@ -197,17 +192,17 @@ export const AttendancePage: React.FC = () => {
                   PDL - Dinas Luar
                 </h4>
                 <p className="text-sm text-gray-500 mt-1">Perjalanan dinas luar kota</p>
-                
+
                 {attendanceType === 'PDL' && (
                   <div className="mt-3">
-                     <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                        placeholder="Masukkan keterangan dinas..."
-                        rows={2}
-                        value={keterangan}
-                        onChange={(e) => setKeterangan(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                     />
+                    <textarea
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                      placeholder="Masukkan keterangan dinas..."
+                      rows={2}
+                      value={keterangan}
+                      onChange={(e) => setKeterangan(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </div>
                 )}
               </div>
@@ -218,19 +213,19 @@ export const AttendancePage: React.FC = () => {
         {/* Submit Button */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-[60]">
           <div className="max-w-md mx-auto">
-            <Button 
-              fullWidth 
-              size="lg" 
+            <Button
+              fullWidth
+              size="lg"
               onClick={handleSubmit}
               isLoading={isSubmitting}
               disabled={
-                isSubmitting || 
-                // (attendanceType === '' && !isLocationValid) || // disabled location check
+                isSubmitting ||
+                (attendanceType === '' && !isLocationValid) ||
                 (attendanceType === 'PDL' && !keterangan)
               }
             >
-              {attendanceType === '' && !isLocationValid 
-                ? 'Lokasi Tidak Sesuai (Debug: Enabled)' 
+              {attendanceType === '' && !isLocationValid
+                ? 'Lokasi Tidak Sesuai'
                 : 'Kirim Presensi Masuk'}
             </Button>
           </div>
@@ -243,16 +238,16 @@ export const AttendancePage: React.FC = () => {
 // Helper icon for check circle
 function FiCheckCircle({ className }: { className?: string }) {
   return (
-    <svg 
-      stroke="currentColor" 
-      fill="none" 
-      strokeWidth="2" 
-      viewBox="0 0 24 24" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className} 
-      height="1em" 
-      width="1em" 
+    <svg
+      stroke="currentColor"
+      fill="none"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      height="1em"
+      width="1em"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>

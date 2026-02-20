@@ -4,6 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.prescap.app',
   appName: 'Presensi App',
   webDir: 'dist',
+  icon: 'icon.png',  // Use public/icon.png for app icon
   server: {
     androidScheme: 'http',
     allowNavigation: [
@@ -15,6 +16,14 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorHttp: {
       enabled: true,
+    },
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: "#ffffff",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
     },
   },
 };

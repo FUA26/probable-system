@@ -4,6 +4,8 @@ import { secureStorage } from '../services/storage/storage';
 import { presensiAPI } from '../services/api/presensi';
 import { getCurrentLocation, calculateDistance } from '../services/platform/geolocation';
 import { capturePhoto } from '../services/platform/camera';
+import { MockLocation } from '@dewakoding/capacitor-mock-location';
+import { Capacitor } from '@capacitor/core';
 import type { TodayStatus, OfficeLocation } from '../types/presensi';
 import { toast } from 'react-hot-toast';
 
@@ -56,7 +58,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     };
-    
+
     if (user) {
       loadOfficeLocation();
     }
@@ -149,6 +151,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Get location
       const location = await getCurrentLocationHandler();
 
+      // Check for mock location (fake GPS) with warning only
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { isMock } = await MockLocation.checkMockLocation();
+          console.log('[MockLocation] Check result:', { isMock, location });
+
+          if (isMock) {
+            // Show warning but allow user to continue
+            toast(
+              'Peringatan: Fake GPS terdeteksi. Jika Anda tidak menggunakan fake GPS, silakan lanjutkan.',
+              { icon: '⚠️', duration: 5000 }
+            );
+            // Don't block submission - just warn the user
+          }
+        } catch (mockError) {
+          console.warn('[MockLocation] Check failed:', mockError);
+          // Continue anyway - don't block submission if check fails
+        }
+      }
+
       // Check if within office radius (for WFO)
       if (attendanceType === '' && officeLocation) {
         const distance = calculateDistance(
@@ -169,32 +191,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       // Capture photo (optional, can be skipped)
-      let photoDataUrl: string | undefined;
+      // NOTE: Photo capture disabled temporarily, not sending to API
       try {
-        photoDataUrl = await capturePhoto();
+        await capturePhoto();
       } catch (error: any) {
-        if (error.message === 'Camera cancelled' || error.message === 'User cancelled photos app') {
-          // User cancelled, proceed without photo
-          photoDataUrl = undefined;
-        } else {
+        if (error.message !== 'Camera cancelled' && error.message !== 'User cancelled photos app') {
           throw error;
         }
+        // If user cancelled, proceed without photo
       }
 
       // Prepare form data
       const formData = new FormData();
-      
+
       // DEBUG: Force use office location if available as requested by user
-      if (officeLocation) {
-        console.log('[submitAttendance] Force using Office Location:', officeLocation);
-        formData.append('lat', String(officeLocation.lat));
-        formData.append('long', String(officeLocation.lng));
-        toast('Info: Menggunakan Lokasi Kantor (Hardcoded)', { icon: '🔧' });
-      } else {
-        formData.append('lat', location.lat);
-        formData.append('long', location.lng);
-      }
-      
+      // Use actual location
+      formData.append('lat', String(location.lat));
+      formData.append('long', String(location.lng));
+
       formData.append('jenis', attendanceType);
       formData.append('status', type === 'masuk' ? '1' : '0');
 
@@ -202,12 +216,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         formData.append('keterangan', keterangan);
       }
 
-      if (photoDataUrl) {
-        // Convert data URL to blob
-        const response = await fetch(photoDataUrl);
-        const blob = await response.blob();
-        formData.append('foto', blob, 'photo.jpg');
-      }
+      // TEMPORARY: Disable sending image to API
+      // if (photoDataUrl) {
+      //   // Convert data URL to blob
+      //   const response = await fetch(photoDataUrl);
+      //   const blob = await response.blob();
+      //   formData.append('foto', blob, 'photo.jpg');
+      // }
 
       // Submit
       const result = await presensiAPI.submit(formData);

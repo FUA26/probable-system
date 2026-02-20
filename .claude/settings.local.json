@@ -28,7 +28,12 @@
       "Bash(npm run lint:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm cache clean:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Skill(superpowers:systematic-debugging)",
+      "Bash(npx cap sync:*)",
+      "Bash(./gradlew:*)",
+      "Bash(sudo apt:*)",
+      "Bash(apt-cache:*)"
     ]
   }
 }
