@@ -9,7 +9,7 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
   const { user } = useAuth();
 
   return (
-    <header className="bg-primary-600 text-white px-4 py-4 sticky top-0 z-40">
+    <header className="bg-primary-600 text-white px-4 py-4 sticky top-0 z-[1001]">
       <div className="max-w-lg mx-auto">
         {title ? (
           <h1 className="text-xl font-bold">{title}</h1>

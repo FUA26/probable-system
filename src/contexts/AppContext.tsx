@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { secureStorage } from '../services/storage/storage';
 import { presensiAPI } from '../services/api/presensi';
 import { getCurrentLocation, calculateDistance } from '../services/platform/geolocation';
 import { capturePhoto } from '../services/platform/camera';
@@ -30,25 +31,53 @@ export const useApp = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
-  const [officeLocation] = useState<OfficeLocation | null>(null);
+  const [officeLocation, setOfficeLocation] = useState<OfficeLocation | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: string; lng: string } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch today's status on mount
   useEffect(() => {
+    const loadOfficeLocation = async () => {
+      const storedLocation = await secureStorage.getItem('office_location');
+      if (storedLocation) {
+        try {
+          const locationData = JSON.parse(storedLocation);
+          // Ensure lat/lng are numbers
+          setOfficeLocation({
+            lat: Number(locationData.lat),
+            lng: Number(locationData.lng),
+            radius: Number(locationData.radius),
+            name: locationData.nama_lokasi || 'Kantor',
+          });
+          console.log('[AppContext] Office location loaded:', locationData);
+        } catch (e) {
+          console.error('Failed to parse office location', e);
+        }
+      }
+    };
+    
     if (user) {
-      // Get office location from user data
-      // This would come from the login response
-      // For now, we'll set it from shift data
+      loadOfficeLocation();
     }
   }, [user]);
 
   const fetchTodayStatus = useCallback(async () => {
     try {
       const response = await presensiAPI.getHistory();
-      const today = new Date().toISOString().split('T')[0];
-      const todayRecord = response.data.find((record) => record.tgl === today);
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      console.log('[fetchTodayStatus] today (ISO):', today);
+      console.log('[fetchTodayStatus] total records:', response.data.length);
+      console.log('[fetchTodayStatus] all record.tgl:', response.data.map((r) => r.tgl));
+
+      const todayRecord = response.data.find((record) => {
+        console.log(`[fetchTodayStatus] comparing record.tgl="${record.tgl}" === today="${today}" =>`, record.tgl === today);
+        return record.tgl === today;
+      });
+
+      console.log('[fetchTodayStatus] todayRecord:', todayRecord ?? 'NOT FOUND');
 
       if (todayRecord) {
         setTodayStatus({
@@ -154,8 +183,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Prepare form data
       const formData = new FormData();
-      formData.append('lat', location.lat);
-      formData.append('long', location.lng);
+      
+      // DEBUG: Force use office location if available as requested by user
+      if (officeLocation) {
+        console.log('[submitAttendance] Force using Office Location:', officeLocation);
+        formData.append('lat', String(officeLocation.lat));
+        formData.append('long', String(officeLocation.lng));
+        toast('Info: Menggunakan Lokasi Kantor (Hardcoded)', { icon: '🔧' });
+      } else {
+        formData.append('lat', location.lat);
+        formData.append('long', location.lng);
+      }
+      
       formData.append('jenis', attendanceType);
       formData.append('status', type === 'masuk' ? '1' : '0');
 

@@ -6,6 +6,8 @@ import { HomePage } from './pages/HomePage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { PermissionWrapper } from './components/auth/PermissionWrapper';
+import { AttendancePage } from './pages/AttendancePage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -23,7 +25,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <PermissionWrapper>
+      {children}
+    </PermissionWrapper>
+  );
 };
 
 // Public Route Component (redirect if authenticated)
@@ -74,6 +80,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/attendance"
+            element={
+              <ProtectedRoute>
+                <AttendancePage />
               </ProtectedRoute>
             }
           />

@@ -112,6 +112,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Store user data
       setUser(response.user);
       await secureStorage.setItem('user_profile', JSON.stringify(response.user));
+      
+      console.log('[AuthContext] Full Login Response Keys:', Object.keys(response));
+      console.log('[AuthContext] Full Login Response:', response);
+
+      // Try multiple possible paths for office location
+      const officeLocation = 
+        (response as any).lokasiKantor || 
+        (response as any).lokasi_kantor || 
+        (response.user as any).lokasi_kantor ||
+        (response.user as any).kantor;
+
+      if (officeLocation) {
+        console.log('[AuthContext] Saving office location:', officeLocation);
+        await secureStorage.setItem('office_location', JSON.stringify(officeLocation));
+        // toast.success('Lokasi kantor berhasil disimpan'); 
+      } else {
+        console.warn('[AuthContext] No office location found in login response');
+        // toast('Info: Data lokasi kantor tidak ditemukan di respon login', { icon: 'ℹ️' });
+      }
 
       toast.success('Login berhasil');
     } catch (error: any) {
@@ -140,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear local storage regardless of API call result
       await secureStorage.removeItem('auth_token');
       await secureStorage.removeItem('user_profile');
+      await secureStorage.removeItem('office_location');
       setToken(null);
       setUser(null);
       toast.success('Logout berhasil');

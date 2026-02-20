@@ -136,14 +136,18 @@ export const HistoryPage: React.FC = () => {
 
               {/* Locations */}
               <div className="text-xs text-gray-500 pt-2 border-t">
-                <div className="flex items-center gap-1">
-                  <FiMapPin className="text-xs" />
-                  <span>Masuk: {record.lokasi || '-'}</span>
+                <div className="flex items-center gap-1 overflow-hidden">
+                  <FiMapPin className="text-xs flex-shrink-0" />
+                  <span className="truncate block" title={record.lokasi || '-'}>
+                    Masuk: {record.lokasi || '-'}
+                  </span>
                 </div>
                 {record.lokasi_keluar && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <FiMapPin className="text-xs" />
-                    <span>Keluar: {record.lokasi_keluar}</span>
+                  <div className="flex items-center gap-1 mt-1 overflow-hidden">
+                    <FiMapPin className="text-xs flex-shrink-0" />
+                    <span className="truncate block" title={record.lokasi_keluar}>
+                      Keluar: {record.lokasi_keluar}
+                    </span>
                   </div>
                 )}
               </div>

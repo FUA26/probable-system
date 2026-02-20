@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://172.16.26.71:4002',
+        target: 'https://apipresensidev.malangkab.go.id',
+        // target: 'http://presensi-api.bumigirindhra.my.id/',
         changeOrigin: true,
         secure: false
       }

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -11,40 +12,73 @@ import { getGreeting } from '../utils/date';
 import { FiCheckCircle, FiLogOut, FiMapPin } from 'react-icons/fi';
 
 export const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { todayStatus, submitAttendance, isSubmitting, fetchTodayStatus } = useApp();
-  const [attendanceType, setAttendanceType] = useState<'' | 'WFH' | 'PDL'>('');
-  const [showTypeSelector, setShowTypeSelector] = useState(false);
 
   useEffect(() => {
-    fetchTodayStatus();
+    // Fetch on initial mount
+    console.log('[HomePage] Fetching todayStatus on mount...');
+    fetchTodayStatus().then(() => {
+      console.log('[HomePage] todayStatus fetched on mount.');
+    });
+
+    // Refetch when tab/window becomes visible (handles browser refresh & tab switching)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[HomePage] Page became visible, refetching todayStatus...');
+        fetchTodayStatus().then(() => {
+          console.log('[HomePage] todayStatus refetched after visibility change.');
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Also refetch on window focus (e.g., switching back from another app)
+    const handleFocus = () => {
+      console.log('[HomePage] Window focused, refetching todayStatus...');
+      fetchTodayStatus().then(() => {
+        console.log('[HomePage] todayStatus refetched after window focus.');
+      });
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic refetch every 60 seconds
+    const interval = setInterval(() => {
+      console.log('[HomePage] Periodic refetch of todayStatus...');
+      fetchTodayStatus().then(() => {
+        console.log('[HomePage] todayStatus periodic refetch done.');
+      });
+    }, 60_000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
   }, [fetchTodayStatus]);
 
   const handleMasuk = async () => {
     if (!todayStatus?.hasCheckedIn) {
-      // Show type selector first
-      setShowTypeSelector(true);
+      navigate('/attendance');
     }
   };
 
   const handleKeluar = async () => {
     if (todayStatus?.hasCheckedIn && !todayStatus?.hasCheckedOut) {
       try {
-        await submitAttendance('keluar', attendanceType);
+        // For checkout, we can pass empty string or existing status. 
+        // Passing '' assumes backend knows match or doesn't care for checkout.
+        await submitAttendance('keluar', (todayStatus.status as 'WFH'|'PDL'|'') || '');
       } catch (error) {
         // Error already handled in context
       }
     }
   };
 
-  const confirmAttendanceType = async () => {
-    setShowTypeSelector(false);
-    try {
-      await submitAttendance('masuk', attendanceType);
-    } catch (error) {
-      // Error already handled in context
-    }
-  };
+
 
   return (
     <MainLayout>
@@ -111,65 +145,7 @@ export const HomePage: React.FC = () => {
         </Card>
 
         {/* Attendance Type Selector */}
-        {showTypeSelector && (
-          <Card className="border-primary-200 bg-primary-50">
-            <h3 className="font-semibold text-gray-900 mb-3">Pilih Jenis Presensi</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => setAttendanceType('')}
-                className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
-                  attendanceType === ''
-                    ? 'border-primary-600 bg-primary-100 text-primary-700'
-                    : 'border-gray-300 hover:border-primary-400'
-                }`}
-              >
-                <div className="font-medium">WFO - Work From Office</div>
-                <div className="text-sm text-gray-600">Masuk ke kantor</div>
-              </button>
 
-              <button
-                onClick={() => setAttendanceType('WFH')}
-                className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
-                  attendanceType === 'WFH'
-                    ? 'border-primary-600 bg-primary-100 text-primary-700'
-                    : 'border-gray-300 hover:border-primary-400'
-                }`}
-              >
-                <div className="font-medium">WFH - Work From Home</div>
-                <div className="text-sm text-gray-600">Bekerja dari rumah</div>
-              </button>
-
-              <button
-                onClick={() => setAttendanceType('PDL')}
-                className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
-                  attendanceType === 'PDL'
-                    ? 'border-primary-600 bg-primary-100 text-primary-700'
-                    : 'border-gray-300 hover:border-primary-400'
-                }`}
-              >
-                <div className="font-medium">PDL - Perjalanan Dinas Luar</div>
-                <div className="text-sm text-gray-600">Dinas luar kota</div>
-              </button>
-            </div>
-
-            <div className="flex gap-2 mt-4">
-              <Button
-                onClick={confirmAttendanceType}
-                disabled={!attendanceType}
-                className="flex-1"
-              >
-                Lanjutkan
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => setShowTypeSelector(false)}
-                className="flex-1"
-              >
-                Batal
-              </Button>
-            </div>
-          </Card>
-        )}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
